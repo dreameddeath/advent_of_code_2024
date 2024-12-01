@@ -1,0 +1,7 @@
+{
+    "lldb.launch.cwd": "${workspaceFolder}",
+    "lldb.launch.sourceLanguages": [
+        "rust"
+    ],
+    "lldb.suppressMissingSourceFiles": false
+}
