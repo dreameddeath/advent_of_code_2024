@@ -3,7 +3,7 @@ const start = new Date().getTime();
 import { endAll, failures, runInAllMode } from "./day_utils";
 runInAllMode(false);
 import "./history/day_01";
-// import "./history/day_02";
+import "./history/day_02";
 // import "./history/day_03";
 // import "./history/day_04";
 // import "./history/day_05";
