@@ -33,26 +33,21 @@ function doMul(m: string): number {
     return parseInt(res[1], 10) * parseInt(res[2], 10);
 }
 
-function doCalc(m: Token[]): number {
-    let res = 0;
-    let enabled = true;
-    for (const current of m) {
-        if (current.type === TokenType.DONT) {
-            enabled = false;
-        } else if (current.type === TokenType.DO) {
-            enabled = true;
-        } else if (enabled && current.type === TokenType.MUL) {
-            res += current.a * current.b;
-        }
-    }
-    return res;
+interface State {
+    enabled: boolean,
+    total: number;
 }
 
 function puzzle(lines: string[], part: Part, type: Type, logger: Logger): void {
     const data = parse(lines);
     const result = data.filterTyped<TokenMul>(t => t.type === TokenType.MUL).reduce((s, t) => s + t.a * t.b, 0);
-    const resultPart2 = doCalc(data);
-    logger.result([result, resultPart2], [161, 168539636, 48, 97529391])
+    const resultPart2 = data.reduce<State>((state, token) => {
+        return {
+            enabled: (token.type === TokenType.DO || state.enabled) && token.type !== TokenType.DONT,
+            total: state.total + (token.type === TokenType.MUL && state.enabled ? token.a * token.b : 0)
+        }
+    }, { enabled: true, total: 0 });
+    logger.result([result, resultPart2.total], [161, 168539636, 48, 97529391])
 
 }
 
