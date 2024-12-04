@@ -6,10 +6,10 @@ export namespace World2D {
     export type Pos = { x: number, y: number }
     export type Vec = { x: number, y: number }
     export enum TurnType {
-        OPPOSITE='O',
-        STRAIT='S',
-        CLOCKWISE='C',
-        COUNTERCLOCK_WISE='M'
+        OPPOSITE = 'O',
+        STRAIT = 'S',
+        CLOCKWISE = 'C',
+        COUNTERCLOCK_WISE = 'M'
     }
 
 
@@ -101,7 +101,7 @@ export namespace World2D {
     }
 
 
-    export class Map2d<T>{
+    export class Map2d<T> {
         private _cells: Content<T>;
         private _width: number;
         private _height: number;
@@ -125,6 +125,7 @@ export namespace World2D {
         public opposite(dir: Dir): Dir {
             return oppositeDir(dir);
         }
+
         public apply_to_all(x_dir: Dir, y_dir: Dir, fct: (pos: Pos) => void) {
             const all_y = [...generator(this._height)];
             const all_x = [...generator(this._width)];
@@ -135,6 +136,22 @@ export namespace World2D {
                 all_y.reverse();
             }
             all_y.forEach(y => all_x.forEach(x => fct({ x, y })))
+        }
+
+        public * move_all_direction(pos: Readonly<Pos>, withDiags?: boolean): Generator<Pos> {
+            const dirs = withDiags ? ALL_DIRECTIONS_WITH_DIAGS : ALL_DIRECTIONS_WITHOUT_DIAGS;
+            for(const dir of dirs){
+                const next_pos = this.move_pos_many(pos,dir);
+                if(next_pos){
+                    yield next_pos;
+                }
+            }
+        }
+
+        public * move_all_direction_with_cell(pos: Readonly<Pos>, withDiags?: boolean): Generator<PosAndCell<T>> {
+            for (const nextPos of this.move_all_direction(pos, withDiags)) {
+                yield { pos: nextPos, cell: this.cell(nextPos) };
+            }
         }
 
         public move_pos_with_cell(pos: Readonly<Pos>, dir: Dir): PosAndCell<T> | undefined {
@@ -149,6 +166,15 @@ export namespace World2D {
             return directions.reduce((curr_pos, dir) => this.move_pos(curr_pos, dir), pos);
         }
 
+        public move_pos_many_with_cell(pos: Readonly<Pos> | undefined, directions: Dir[]): PosAndCell<T> | undefined {
+            const nextPos = directions.reduce((curr_pos, dir) => this.move_pos(curr_pos, dir), pos);
+            if(nextPos===undefined){
+                return undefined;
+            }
+            return { pos: nextPos, cell: this.cell(nextPos) };
+        }
+
+
         public cell(pos: Readonly<Pos>): T {
             const c = this._cells[pos.y]?.[pos.x];
             if (c === undefined) {
@@ -157,7 +183,7 @@ export namespace World2D {
             return c;
         }
 
-        public cell_opt(pos: Readonly<Pos>): T|undefined {
+        public cell_opt(pos: Readonly<Pos>): T | undefined {
             return this._cells[pos.y]?.[pos.x];
         }
 
@@ -241,8 +267,28 @@ export namespace World2D {
 
     }
 
+    export const ALL_DIRECTIONS = allDirections();
+
+    export const ALL_DIRECTIONS_WITH_DIAGS = allDirectionsWithDiags();
+
+    export const ALL_DIRECTIONS_WITHOUT_DIAGS = allDirections().map(d => [d]);
+
+    export const ALL_DIRECTION_DIAGS = allDirectionsWithDiags().filter(d => d.length===2);
+
+    export const DIRECTIONS_TOP_LEFT = [Dir.UP, Dir.LEFT];
+    export const DIRECTIONS_TOP_RIGHT = [Dir.UP, Dir.RIGHT];
+    export const DIRECTIONS_BOTTOM_LEFT = [Dir.DOWN, Dir.LEFT];
+    export const DIRECTIONS_BOTTOM_RIGHT = [Dir.DOWN, Dir.RIGHT];
+
     export function allDirections(): [Dir, Dir, Dir, Dir] {
         return [Dir.UP, Dir.DOWN, Dir.LEFT, Dir.RIGHT];
+    }
+
+    export function allDirectionsWithDiags(): [Dir[], Dir[], Dir[], Dir[], Dir[], Dir[], Dir[], Dir[]] {
+        return [
+            [Dir.UP], [Dir.DOWN], [Dir.LEFT], [Dir.RIGHT],
+            [Dir.UP, Dir.LEFT], [Dir.DOWN, Dir.LEFT], [Dir.UP, Dir.RIGHT], [Dir.DOWN, Dir.RIGHT]
+        ];
     }
     export function oppositeDir(dir: Dir): Dir {
         switch (dir) {
