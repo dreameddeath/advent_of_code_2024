@@ -6,7 +6,7 @@ import "./history/day_01";
 import "./history/day_02";
 import "./history/day_03";
 import "./history/day_04";
-// import "./history/day_05";
+import "./history/day_05";
 // import "./history/day_06";
 // import "./history/day_07";
 // import "./history/day_08";
