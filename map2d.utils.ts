@@ -2,7 +2,8 @@ import { generator } from "./utils";
 
 
 export namespace World2D {
-    export enum Dir { LEFT = "LEFT", RIGHT = "RIGHT", UP = "UP", DOWN = "DOWN" }
+    //export enum Dir { LEFT = "LEFT", RIGHT = "RIGHT", UP = "UP", DOWN = "DOWN" }
+    export enum Dir { LEFT = 0, RIGHT = 1, UP = 2, DOWN = 3 }
     export type Pos = { x: number, y: number }
     export type Vec = { x: number, y: number }
     export enum TurnType {
@@ -140,9 +141,9 @@ export namespace World2D {
 
         public * move_all_direction(pos: Readonly<Pos>, withDiags?: boolean): Generator<Pos> {
             const dirs = withDiags ? ALL_DIRECTIONS_WITH_DIAGS : ALL_DIRECTIONS_WITHOUT_DIAGS;
-            for(const dir of dirs){
-                const next_pos = this.move_pos_many(pos,dir);
-                if(next_pos){
+            for (const dir of dirs) {
+                const next_pos = this.move_pos_many(pos, dir);
+                if (next_pos) {
                     yield next_pos;
                 }
             }
@@ -168,7 +169,7 @@ export namespace World2D {
 
         public move_pos_many_with_cell(pos: Readonly<Pos> | undefined, directions: Dir[]): PosAndCell<T> | undefined {
             const nextPos = directions.reduce((curr_pos, dir) => this.move_pos(curr_pos, dir), pos);
-            if(nextPos===undefined){
+            if (nextPos === undefined) {
                 return undefined;
             }
             return { pos: nextPos, cell: this.cell(nextPos) };
@@ -273,7 +274,7 @@ export namespace World2D {
 
     export const ALL_DIRECTIONS_WITHOUT_DIAGS = allDirections().map(d => [d]);
 
-    export const ALL_DIRECTION_DIAGS = allDirectionsWithDiags().filter(d => d.length===2);
+    export const ALL_DIRECTION_DIAGS = allDirectionsWithDiags().filter(d => d.length === 2);
 
     export const DIRECTIONS_TOP_LEFT = [Dir.UP, Dir.LEFT];
     export const DIRECTIONS_TOP_RIGHT = [Dir.UP, Dir.RIGHT];

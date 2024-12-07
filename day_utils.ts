@@ -236,7 +236,7 @@ function buildLogger(day: number, debugMode: boolean | undefined, part: Part, ty
         error: (message: LogMessage) => do_log(true, part, type, message),
         result: <T>(value: T | [T, T], result?: T | [T, T] | [T, T, T, T]) => {
             const result_value = calcSuccessMessage(part, type, value, result);
-            const finalMessage = `[${name}][${part}] RESULT ${result_value} ====>${value}<====`;
+            const finalMessage = `[${name}][${part}] RESULT ${result_value} ====>${Array.isArray(value)?value.join(", "):value}<====`;
             if (result_value === "KO") {
                 const target = type === Type.RUN ? failures.run : failures.test;
                 target.count++;
