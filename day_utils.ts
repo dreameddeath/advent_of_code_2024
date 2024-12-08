@@ -1,3 +1,4 @@
+import { ParallelContext } from "./parallel_utils";
 import "./utils";
 import * as fs from 'fs';
 
@@ -132,8 +133,11 @@ export function runInAllMode(disableTests: boolean) {
 
 export async function endAll() {
     await Promise.allSettled(_beforeRun);
-    finalizeAll();
-    process.exit();
+    if (!ParallelContext.isWorker()) {
+        finalizeAll();
+        ParallelContext.doStop();
+        process.exit();
+    }
 }
 
 function finalizeAll() {
@@ -199,12 +203,20 @@ export async function internal_run<BTAG>(before: Promise<void>[], day: number, t
  *          bench(boolean): si vrai mode bench (execution 10 fois puis moyenne en enlevant le résultat le plus rapide et le résultat le plus lent)
  *          benchTags(array): tags à passer à la fonction pour "tunner" le comportement
  */
-export async function run<BTAG>(day: number, types: Type[], fct: Solver<BTAG>, parts: Part[] = [Part.ALL], opt?: { bench?: number, debug?: boolean, benchTags?: BTAG[] }): Promise<void> {
+export async function run<BTAG>(day: number, types: Type[], fct: Solver<BTAG>, parts: Part[] = [Part.ALL], opt?: { multithread?: true, bench?: number, debug?: boolean, benchTags?: BTAG[] }): Promise<void> {
+    if (opt?.multithread || ParallelContext.isWorker()) {
+        _beforeRun.push(ParallelContext.doStart());
+    }
     const beforeRunLocal = [..._beforeRun];
+
+    if (ParallelContext.isWorker()) {
+        return;
+    }
     _beforeRun.push(internal_run(beforeRunLocal, day, types, fct, parts, opt));
     if (!_allrun) {
         try {
-            await Promise.all(_beforeRun)
+            await Promise.all(_beforeRun);
+            ParallelContext.doStop();
             process.exit(0);
         }
         catch (e) {
@@ -236,7 +248,7 @@ function buildLogger(day: number, debugMode: boolean | undefined, part: Part, ty
         error: (message: LogMessage) => do_log(true, part, type, message),
         result: <T>(value: T | [T, T], result?: T | [T, T] | [T, T, T, T]) => {
             const result_value = calcSuccessMessage(part, type, value, result);
-            const finalMessage = `[${name}][${part}] RESULT ${result_value} ====>${Array.isArray(value)?value.join(", "):value}<====`;
+            const finalMessage = `[${name}][${part}] RESULT ${result_value} ====>${Array.isArray(value) ? value.join(", ") : value}<====`;
             if (result_value === "KO") {
                 const target = type === Type.RUN ? failures.run : failures.test;
                 target.count++;

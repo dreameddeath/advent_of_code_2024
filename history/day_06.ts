@@ -1,7 +1,5 @@
-import { dir } from "console";
 import { Logger, Part, run, Type } from "../day_utils"
 import { World2D } from "../map2d.utils";
-import { vi } from "date-fns/locale";
 import { generator } from "../utils";
 
 enum CellType {
@@ -15,7 +13,7 @@ enum CellType {
 
 type NextWallMap = Map<World2D.Dir, World2D.Pos>;
 
-type CellNotWall = { curr: Set<CellType>, simulationPerBlock: Map<string, Set<CellType>>, wallMap: NextWallMap };
+type CellNotWall = { curr: Set<CellType>/*, simulationPerBlock: Map<string, Set<CellType>>*/, wallMap: NextWallMap };
 
 type Cell = CellType.WALL | CellNotWall;
 
@@ -72,7 +70,8 @@ function parse(lines: string[]): MapWorld {
         }));
     return {
         map,
-        start
+        start,
+
     }
 }
 
@@ -85,34 +84,13 @@ function mapDir(dir: World2D.Dir): CellType {
     }
 }
 
-function checkCycleOrAddVirtual(virtualKey: string, cell: CellNotWall, currDirCell: CellType): boolean {
-    const virtualSet = cell.simulationPerBlock.get(virtualKey);
-    if (virtualSet !== undefined) {
-        if (virtualSet.has(currDirCell)) {
-            return true;
-        }
-        virtualSet.add(currDirCell);
+function checkCycleOrAddVirtual(cellPos: World2D.Pos, currDirCell: CellType, visitedDuringCheck: Set<string>): boolean {
+    const fullKey = cellPos.x + "|" + cellPos.y + "|" + currDirCell;
+    if(visitedDuringCheck.has(fullKey)){
+        return true;
     }
-    else {
-        const newVirtual = new Set<CellType>();
-        newVirtual.add(currDirCell);
-        cell.simulationPerBlock.set(virtualKey, newVirtual);
-    }
+    visitedDuringCheck.add(fullKey);
     return false;
-}
-
-function toStringCell(c: Cell): string {
-    if (c === CellType.WALL) {
-        return CellType.WALL;
-    }
-    if (c.curr.size === 0) {
-        return CellType.EMPTY;
-    }
-    if (c.curr.size === 1) {
-        const cell: CellType = c.curr.keys().next()?.value!;
-        return cell;
-    }
-    return c.curr.size + "";
 }
 
 function isObstacleReachable(currPos: World2D.Pos, posObstacle: World2D.Pos, currDir: World2D.Dir): boolean {
@@ -147,19 +125,19 @@ function nextOptimalPos(currCell: CellNotWall, currPos: World2D.Pos, posObstacle
 }
 
 function checkCycles(w: MapWorld, cell: CellNotWall, s: World2D.Pos, dirBeforeObstacle: World2D.Dir): boolean {
+    const visitedDuringCheck = new Set<string>();
     const posObstacleWithCell = w.map.move_pos_with_cell(s, dirBeforeObstacle);
     if (posObstacleWithCell === undefined || posObstacleWithCell.cell === CellType.WALL || posObstacleWithCell.cell.curr.size > 0) {
         return false;
     }
 
     let currDir = World2D.turn_dir(dirBeforeObstacle, World2D.TurnType.CLOCKWISE);
-    const virtualKey = posObstacleWithCell.pos.x + "|" + posObstacleWithCell.pos.y + "|" + currDir;
     let currPos = s;
     let currDirCell = mapDir(currDir);
     let currCell = cell;
     let isFirst = true;
     while (true) {
-        if (!isFirst && (currCell.curr.has(currDirCell) || checkCycleOrAddVirtual(virtualKey, currCell, currDirCell))) {
+        if (!isFirst && (currCell.curr.has(currDirCell) || checkCycleOrAddVirtual(currPos, currDirCell, visitedDuringCheck))) {
             return true;
         }
         isFirst = false;
