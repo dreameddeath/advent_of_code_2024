@@ -20,5 +20,6 @@ function puzzle(lines: string[], part: Part, type: Type, logger: Logger): void {
 /**
  * Update the date number after copy
  * Adapt types list to your needs and parts also 
+ * @see run javadoc
  */
-run(8, [Type.TEST, Type.RUN], puzzle, [Part.PART_1, Part.PART_2])
+run(9, [Type.TEST, Type.RUN], puzzle, [Part.PART_1, Part.PART_2])

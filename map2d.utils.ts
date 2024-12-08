@@ -106,6 +106,24 @@ export namespace World2D {
                 return TurnType.COUNTERCLOCK_WISE;
             }
         }
+
+        public invert(): Vec2d {
+            return new Vec2d({ x: this.delta_x, y: this.delta_y }, { x: 0, y: 0 });
+        }
+
+        public move(pos: Pos): Pos {
+            return {
+                x: pos.x + this.delta_x,
+                y: pos.y + this.delta_y
+            }
+        }
+
+        public moveOpposite(pos: Pos): Pos {
+            return {
+                x: pos.x - this.delta_x,
+                y: pos.y - this.delta_y
+            }
+        }
     }
 
     /**
@@ -161,6 +179,7 @@ export namespace World2D {
             }
             return new_pos;
         }
+
         public opposite(dir: Dir): Dir {
             return oppositeDir(dir);
         }
