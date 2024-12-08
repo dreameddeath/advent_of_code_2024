@@ -163,8 +163,8 @@ export async function internal_run<BTAG>(before: Promise<void>[], day: number, t
     const start = new Date();
     for (const part of parts) {
         for (const type of types) {
-            if (_disableTests && type == Type.TEST) {
-                return;
+            if (_disableTests && type === Type.TEST) {
+                continue;
             }
             const logger: Logger = buildLogger(day, opt?.debug, part, type)
 
