@@ -14,7 +14,7 @@ const AVAILABLE_CPUS = cpus().length;
 class WorkerPool {
     private static readonly SCRIPT_MAIN = process.argv[1];
 
-    private maxWorkers = AVAILABLE_CPUS
+    private maxWorkers = Math.min(AVAILABLE_CPUS, 10);
     private taskQueue: Task[] = []
     private workers: WorkerWrapper[] = []
 
@@ -145,7 +145,7 @@ class WorkerPool {
 
     setup(config: SetupConfig = {}): Promise<void> {
         const providedMaxWorker = config?.maxWorkers ?? 0
-        this.maxWorkers = providedMaxWorker > 0 ? providedMaxWorker : AVAILABLE_CPUS
+        this.maxWorkers = providedMaxWorker > 0 ? providedMaxWorker : Math.min(AVAILABLE_CPUS,10)
 
         if (this.maxWorkers > 10) console.warn(`Worker pool has more than 10 workers.\nYou should also increase the Max Listeners of Node.js (https://nodejs.org/docs/latest/api/events.html#events_emitter_setmaxlisteners_n)\nOtherwise, limit them with start({maxWorkers: 10})`)
 
