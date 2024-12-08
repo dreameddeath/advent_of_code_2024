@@ -4,6 +4,7 @@ import { generator } from "./utils";
 export namespace World2D {
     //export enum Dir { LEFT = "LEFT", RIGHT = "RIGHT", UP = "UP", DOWN = "DOWN" }
     export enum Dir { LEFT = 0, RIGHT = 1, UP = 2, DOWN = 3 }
+    export type DirComposite = Dir[];
     export type Pos = { x: number, y: number }
     export type Vec = { x: number, y: number }
     export enum TurnType {
@@ -14,7 +15,12 @@ export namespace World2D {
     }
 
 
-
+    /**
+     * Calcule le type de rotation à faire pour passer de la direction 1 à la direction 2
+     * @param dir1 
+     * @param dir2 
+     * @returns le type de rotation
+     */
     export function turn_type(dir1: Dir, dir2: Dir): TurnType {
         if (dir1 == dir2) {
             return TurnType.STRAIT;
@@ -30,6 +36,12 @@ export namespace World2D {
         }
     }
 
+    /**
+     * Tourne depuis une direction
+     * @param dir la direction d'origine
+     * @param turn_type la rotation a effectuer
+     * @returns la nouvelle direction
+     */
     export function turn_dir(dir: Dir, turn_type: TurnType): Dir {
         switch (turn_type) {
             case TurnType.STRAIT: return dir;
@@ -55,6 +67,9 @@ export namespace World2D {
     }
 
 
+    /**
+     * Classe utilitaire pour mapper les vecteurs 2D
+     */
     export class Vec2d {
         public readonly delta_x: number;
         public readonly delta_y: number;
@@ -68,6 +83,11 @@ export namespace World2D {
             return this.delta_x * (-other.delta_y) - other.delta_x * (-this.delta_y);
         }
 
+        /**
+         * calcule le produit scalaire entre les 2 vecteurs
+         * @param other 
+         * @returns le produit scalaire
+         */
         public scalar_prod(other: Vec2d): number {
             return this.delta_x * other.delta_x + other.delta_y * this.delta_y;
         }
@@ -88,6 +108,13 @@ export namespace World2D {
         }
     }
 
+    /**
+     * Se déplace dans la direction souhaitée
+     * @param pos la direction d'origine
+     * @param dir la direction souhaitée
+     * @param dist la distance a parcourir (éventuelle - defaut = 1)
+     * @returns la nouvelle position
+     */
     export function move_pos(pos: Pos, dir: Dir, dist: number = 1): Pos {
         switch (dir) {
             case Dir.DOWN:
@@ -99,6 +126,17 @@ export namespace World2D {
             case Dir.RIGHT:
                 return { x: pos.x + dist, y: pos.y }
         }
+    }
+
+    /**
+     * Se déplace dans la direction composite souhaitée
+     * @param pos la direction d'origine
+     * @param dir la direction composite souhaitée
+     * @param dist la distance a parcourir (éventuelle - defaut = 1)
+     * @returns la nouvelle position
+     */
+    export function move_pos_many(pos: Pos, dir: DirComposite, dist: number = 1): Pos {
+        return dir.reduce((curr_pos, dir) => move_pos(curr_pos, dir, dist), pos);
     }
 
 
@@ -163,11 +201,11 @@ export namespace World2D {
             return { pos: nextPos, cell: this.cell(nextPos) };
         }
 
-        public move_pos_many(pos: Readonly<Pos> | undefined, directions: Dir[]): Pos | undefined {
+        public move_pos_many(pos: Readonly<Pos> | undefined, directions: DirComposite): Pos | undefined {
             return directions.reduce((curr_pos, dir) => this.move_pos(curr_pos, dir), pos);
         }
 
-        public move_pos_many_with_cell(pos: Readonly<Pos> | undefined, directions: Dir[]): PosAndCell<T> | undefined {
+        public move_pos_many_with_cell(pos: Readonly<Pos> | undefined, directions: DirComposite): PosAndCell<T> | undefined {
             const nextPos = directions.reduce((curr_pos, dir) => this.move_pos(curr_pos, dir), pos);
             if (nextPos === undefined) {
                 return undefined;
@@ -285,7 +323,7 @@ export namespace World2D {
         return [Dir.UP, Dir.DOWN, Dir.LEFT, Dir.RIGHT];
     }
 
-    export function allDirectionsWithDiags(): [Dir[], Dir[], Dir[], Dir[], Dir[], Dir[], Dir[], Dir[]] {
+    export function allDirectionsWithDiags(): [DirComposite, DirComposite, DirComposite, DirComposite, DirComposite, DirComposite, DirComposite, DirComposite] {
         return [
             [Dir.UP], [Dir.DOWN], [Dir.LEFT], [Dir.RIGHT],
             [Dir.UP, Dir.LEFT], [Dir.DOWN, Dir.LEFT], [Dir.UP, Dir.RIGHT], [Dir.DOWN, Dir.RIGHT]
@@ -353,6 +391,5 @@ export namespace World2D {
                 }
             }
         }
-
     }
 }

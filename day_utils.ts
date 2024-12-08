@@ -198,7 +198,8 @@ export async function internal_run<BTAG>(before: Promise<void>[], day: number, t
  * @param types the array of types to run
  * @param fct the function to run
  * @param parts the parts to run (use [Part.ALL] to run both parts in the same call)
- * @param opt options 
+ * @param opt options
+ *          multithread(boolean): si vrai active le multithreading (worker threads @see ParallelContext)
  *          debug(boolean): si vrai active le level debug du logger 
  *          bench(boolean): si vrai mode bench (execution 10 fois puis moyenne en enlevant le résultat le plus rapide et le résultat le plus lent)
  *          benchTags(array): tags à passer à la fonction pour "tunner" le comportement
