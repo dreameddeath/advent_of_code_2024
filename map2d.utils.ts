@@ -2,11 +2,12 @@ import { generator } from "./utils";
 
 
 export namespace World2D {
-    //export enum Dir { LEFT = "LEFT", RIGHT = "RIGHT", UP = "UP", DOWN = "DOWN" }
-    export enum Dir { LEFT = 0, RIGHT = 1, UP = 2, DOWN = 3 }
+    export enum Dir { LEFT = "LEFT", RIGHT = "RIGHT", UP = "UP", DOWN = "DOWN" }
+    //export enum Dir { LEFT = 0, RIGHT = 1, UP = 2, DOWN = 3 }
     export type DirComposite = Dir[];
     export type Pos = { x: number, y: number }
     export type Vec = { x: number, y: number }
+    export type Size = { width: number, height: number }
     export enum TurnType {
         OPPOSITE = 'O',
         STRAIT = 'S',
@@ -118,6 +119,29 @@ export namespace World2D {
             }
         }
 
+        public moveClamped(pos: Pos, size: Size): Pos | undefined {
+            const new_pos = this.move(pos);
+            if (new_pos.x < 0 || new_pos.x >= size.width || new_pos.y < 0 || new_pos.y >= size.height) {
+                return undefined;
+            }
+            return new_pos;
+        }
+
+        public moveCyclic(pos: Pos, size: Size): Pos {
+            return {
+                x: (pos.x + this.delta_x + size.width) % size.width,
+                y: (pos.y + this.delta_y + size.height) % size.height
+            };
+        }
+        
+        public moveCyclicOpposite(pos: Pos, size: Size): Pos {
+            return {
+                x: (pos.x - this.delta_x + size.width) % size.width,
+                y: (pos.y - this.delta_y + size.height) % size.height
+            };
+        }
+
+
         public moveOpposite(pos: Pos): Pos {
             return {
                 x: pos.x - this.delta_x,
@@ -160,13 +184,11 @@ export namespace World2D {
 
     export class Map2d<T> {
         private _cells: Content<T>;
-        private _width: number;
-        private _height: number;
-
+        private _size:Size;
+        
         constructor(input: Content<T>) {
             this._cells = input;
-            this._width = input[0].length;
-            this._height = input.length;
+            this._size = {height:input.length,width:input[0].length};
         }
 
         public move_pos(pos: Readonly<Pos> | undefined, dir: Dir): Pos | undefined {
@@ -174,7 +196,7 @@ export namespace World2D {
                 return undefined;
             }
             const new_pos = move_pos(pos, dir);
-            if (new_pos.x < 0 || new_pos.x >= this._width || new_pos.y < 0 || new_pos.y >= this._height) {
+            if (new_pos.x < 0 || new_pos.x >= this._size.width || new_pos.y < 0 || new_pos.y >= this._size.height) {
                 return undefined;
             }
             return new_pos;
@@ -185,8 +207,8 @@ export namespace World2D {
         }
 
         public apply_to_all(x_dir: Dir, y_dir: Dir, fct: (pos: Pos) => void) {
-            const all_y = [...generator(this._height)];
-            const all_x = [...generator(this._width)];
+            const all_y = [...generator(this._size.height)];
+            const all_x = [...generator(this._size.width)];
             if (x_dir == Dir.LEFT) {
                 all_x.reverse();
             }
@@ -236,7 +258,7 @@ export namespace World2D {
         public cell(pos: Readonly<Pos>): T {
             const c = this._cells[pos.y]?.[pos.x];
             if (c === undefined) {
-                throw new Error(`Bad position (${pos.x}:${pos.y}) against (w:${this._width},h:${this._height})`)
+                throw new Error(`Bad position (${pos.x}:${pos.y}) against (w:${this._size.width},h:${this._size.height})`)
             }
             return c;
         }
@@ -247,12 +269,21 @@ export namespace World2D {
 
         public set_cell(pos: Readonly<Pos>, new_value: T): T {
             const line = this._cells[pos.y];
-            if ((line === undefined) || pos.x < 0 || pos.x >= this._width) {
-                throw new Error(`Bad position (${pos.x}:${pos.y}) against (w:${this._width},h:${this._height})`)
+            if ((line === undefined) || pos.x < 0 || pos.x >= this._size.width) {
+                throw new Error(`Bad position (${pos.x}:${pos.y}) against (w:${this._size.width},h:${this._size.height})`)
             }
             const old = line[pos.x];
             line[pos.x] = new_value;
             return old;
+        }
+
+        public apply_cell(pos: Readonly<Pos>, fct:(c:T|undefined)=>T): void{
+            const line = this._cells[pos.y];
+            if ((line === undefined) || pos.x < 0 || pos.x >= this._size.width) {
+                throw new Error(`Bad position (${pos.x}:${pos.y}) against (w:${this._size.width},h:${this._size.height})`)
+            }
+            const new_value = fct(line[pos.x]);
+            line[pos.x] = new_value;
         }
 
 
@@ -307,11 +338,15 @@ export namespace World2D {
         }
 
         public width(): number {
-            return this._width;
+            return this._size.width;
         }
 
         public height(): number {
-            return this._height;
+            return this._size.height;
+        }
+
+        public size():Readonly<Size>{
+            return this._size;
         }
 
         public cells(): Content<T> {
