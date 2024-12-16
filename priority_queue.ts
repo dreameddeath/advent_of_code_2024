@@ -10,11 +10,12 @@ interface QueueCostSlot<T> {
     items: QueuedItem<T>[]
 }
 
+export type TrueDuplicateFunction<T> = ((a: T, b: T) => boolean) | undefined;
 
 /**
  * Priority queue relativement optimisée qui maitient une queue priorisée par une fonction de cout fourni par le constructeur
  */
-export class PriorityQueue<T>{
+export class PriorityQueue<T> {
     private readonly queue: QueueCostSlot<T>[] = [];
     private readonly existingItems: Map<string, number> = new Map()
     private nb_put: number = 0;
@@ -22,12 +23,17 @@ export class PriorityQueue<T>{
 
     constructor(private getCost: (i: T) => number, private readonly keep_processed_key: boolean = false) {
     }
-
-    public put(inputItem: T, key: string | undefined = undefined): number | undefined {
+    /**
+     * Insert into the priority queue
+     * @param inputItem the item to insert
+     * @param key the key to find duplicate and prioritize by cost
+     * @returns if key already exists with better cost, the best cost
+     */
+    public put(inputItem: T, key: string | undefined = undefined, isTrueDuplicate: TrueDuplicateFunction<T> = undefined): number | undefined {
         this.nb_put++;
         const cost = this.getCost(inputItem);
         if (key) {
-            const prefered_duplicate = this.manage_duplicate(cost, key);
+            const prefered_duplicate = this.manage_duplicate(cost, key, inputItem, isTrueDuplicate);
             if (prefered_duplicate) {
                 this.nb_put_duplicates++;
                 return prefered_duplicate;
@@ -58,6 +64,10 @@ export class PriorityQueue<T>{
         return this.nb_put;
     }
 
+    public putsDuplicatesCount(): number {
+        return this.nb_put_duplicates;
+    }
+
     private createNewSlot(cost: number, pos: number | undefined): QueueCostSlot<T> {
         const newSlot = { cost, items: [] };
         if (pos !== undefined) {
@@ -76,29 +86,43 @@ export class PriorityQueue<T>{
         }
     }
 
-    private manage_duplicate(cost: number, key: string): number | undefined {
+    private manage_duplicate(cost: number, key: string, newItem: T, isTrueDuplicate: TrueDuplicateFunction<T>): number | undefined {
         const existingCost = this.existingItems.get(key);
-        if (existingCost !== undefined) {
-            if (existingCost <= cost) {
-                return existingCost;
-            }
-            const [existing_slot_id, slot, existing_item_index, item] = this.get_existing_item_information(existingCost, key);
-            if (item.key) {
-                this.existingItems.delete(item.key);
-            }
-            slot.items.splice(existing_item_index, 1);
-            if (slot.items.length === 0) {
-                this.queue.splice(existing_slot_id, 1);
-            }
-
+        if (existingCost === undefined) {
+            return undefined;
+        }
+        const isSameCost = existingCost === cost;
+        if (existingCost < cost || (isSameCost && isTrueDuplicate === undefined)) {
+            return existingCost;
+        }
+        const found = this.get_existing_item_information(existingCost, key);
+        if (found === undefined) {
+            return undefined;
+        }
+        const [existing_slot_id, slot, existing_item_index, item] = found;
+        if (isSameCost && isTrueDuplicate && !isTrueDuplicate(item.item, newItem)) {
+            return undefined;
+        }
+        if (item.key) {
+            this.existingItems.delete(item.key);
+        }
+        slot.items.splice(existing_item_index, 1);
+        if (slot.items.length === 0) {
+            this.queue.splice(existing_slot_id, 1);
         }
         return undefined;
     }
 
-    private get_existing_item_information(cost: number, key: string): [number, QueueCostSlot<T>, number, QueuedItem<T>] {
+    private get_existing_item_information(cost: number, key: string): [number, QueueCostSlot<T>, number, QueuedItem<T>] | undefined {
         const existing_slot_id = this.queue.findIndex(item => item.cost === cost);
+        if (existing_slot_id === -1) {
+            return undefined;
+        }
         const slot = this.queue[existing_slot_id] as QueueCostSlot<T>;
         const existing_item_index = slot.items.findIndex(item => item.key === key);
+        if (existing_item_index === -1) {
+            return undefined;
+        }
         const item = slot.items[existing_item_index];
         return [existing_slot_id, slot, existing_item_index, item];
     }

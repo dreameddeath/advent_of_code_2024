@@ -5,15 +5,12 @@ export namespace World2D {
     export enum Dir { LEFT = "LEFT", RIGHT = "RIGHT", UP = "UP", DOWN = "DOWN" }
     //export enum Dir { LEFT = 0, RIGHT = 1, UP = 2, DOWN = 3 }
     export type DirComposite = Dir[];
+
     export type Pos = { x: number, y: number }
     export type Vec = { x: number, y: number }
     export type Size = { width: number, height: number }
-    export enum TurnType {
-        OPPOSITE = 'O',
-        STRAIT = 'S',
-        CLOCKWISE = 'C',
-        COUNTERCLOCK_WISE = 'M'
-    }
+    //export enum TurnType {OPPOSITE = 'O',STRAIT = 'S',CLOCKWISE = 'C',COUNTERCLOCK_WISE = 'M'}
+    export enum TurnType { OPPOSITE = 0,STRAIT = 1,CLOCKWISE = 2,COUNTERCLOCK_WISE = 3}
 
 
     /**
@@ -72,6 +69,11 @@ export namespace World2D {
      * Classe utilitaire pour mapper les vecteurs 2D
      */
     export class Vec2d {
+        public static readonly LEFT: Vec2d = new Vec2d({ x: 0, y: 0 }, { x: -1, y: 0 });
+        public static readonly RIGHT: Vec2d = new Vec2d({ x: 0, y: 0 }, { x: 1, y: 0 });
+        public static readonly UP: Vec2d = new Vec2d({ x: 0, y: 0 }, { x: 0, y: -1 });
+        public static readonly DOWN: Vec2d = new Vec2d({ x: 0, y: 0 }, { x: 0, y: 1 });
+
         public readonly delta_x: number;
         public readonly delta_y: number;
 
@@ -108,6 +110,15 @@ export namespace World2D {
             }
         }
 
+        public turn_type_dir(other: Dir): TurnType {
+            switch (other) {
+                case Dir.DOWN: return this.turn_type(Vec2d.DOWN);
+                case Dir.UP: return this.turn_type(Vec2d.UP);
+                case Dir.LEFT: return this.turn_type(Vec2d.LEFT);
+                case Dir.RIGHT: return this.turn_type(Vec2d.RIGHT);
+            };
+        }
+
         public invert(): Vec2d {
             return new Vec2d({ x: this.delta_x, y: this.delta_y }, { x: 0, y: 0 });
         }
@@ -133,7 +144,7 @@ export namespace World2D {
                 y: (pos.y + this.delta_y + size.height) % size.height
             };
         }
-        
+
         public moveCyclicOpposite(pos: Pos, size: Size): Pos {
             return {
                 x: (pos.x - this.delta_x + size.width) % size.width,
@@ -184,11 +195,11 @@ export namespace World2D {
 
     export class Map2d<T> {
         private _cells: Content<T>;
-        private _size:Size;
-        
+        private _size: Size;
+
         constructor(input: Content<T>) {
             this._cells = input;
-            this._size = {height:input.length,width:input[0].length};
+            this._size = { height: input.length, width: input[0].length };
         }
 
         public move_pos(pos: Readonly<Pos> | undefined, dir: Dir): Pos | undefined {
@@ -277,7 +288,7 @@ export namespace World2D {
             return old;
         }
 
-        public apply_cell(pos: Readonly<Pos>, fct:(c:T|undefined)=>T): void{
+        public apply_cell(pos: Readonly<Pos>, fct: (c: T | undefined) => T): void {
             const line = this._cells[pos.y];
             if ((line === undefined) || pos.x < 0 || pos.x >= this._size.width) {
                 throw new Error(`Bad position (${pos.x}:${pos.y}) against (w:${this._size.width},h:${this._size.height})`)
@@ -345,7 +356,7 @@ export namespace World2D {
             return this._size.height;
         }
 
-        public size():Readonly<Size>{
+        public size(): Readonly<Size> {
             return this._size;
         }
 
