@@ -54,6 +54,7 @@ export interface Logger {
     isdebug(): boolean,
     debug(message: LogMessage): void,
     log(message: LogMessage): void,
+    assert<T>(v: T, test: T, message: LogMessage): void
     error(message: LogMessage): void,
     result<T>(value: T | [T, T], testResult?: T | [T, T] | [T, T, T, T]): void,
 }
@@ -62,6 +63,12 @@ const emptyLogger: Logger = {
     isdebug: () => false,
     debug: () => { },
     log: () => { },
+    assert: (v, t, m) => {
+        if (typeof m === "function") {
+            m = m();
+        }
+        if (v !== t) { throw new Error(Array.isArray(m) ? m.join("\n") : m) };
+    },
     error: () => { },
     result: () => { }
 }
@@ -247,6 +254,11 @@ function buildLogger(day: number, debugMode: boolean | undefined, part: Part, ty
         debug: debugMode ? (message: LogMessage) => do_log(false, part, type, message) : (() => { }),
         log: (message: LogMessage) => do_log(false, part, type, message),
         error: (message: LogMessage) => do_log(true, part, type, message),
+        assert: <T>(v: T, t: T, message: LogMessage) => {
+            if (v !== t) {
+                do_log(true, part, type, message)
+            }
+        },
         result: <T>(value: T | [T, T], result?: T | [T, T] | [T, T, T, T]) => {
             const result_value = calcSuccessMessage(part, type, value, result);
             const finalMessage = `[${name}][${part}] RESULT ${result_value} ====>${Array.isArray(value) ? value.join(", ") : value}<====`;
