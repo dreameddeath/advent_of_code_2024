@@ -56,7 +56,7 @@ export interface Logger {
     log(message: LogMessage): void,
     assert<T>(v: T, test: T, message: LogMessage): void
     error(message: LogMessage): void,
-    result<T>(value: T | [T, T], testResult?: T | [T, T] | [T, T, T, T]): void,
+    result<T, U>(value: T | [T, U], testResult: T | [T, T] | [T, T, U, U]|undefined): void,
 }
 
 const emptyLogger: Logger = {
@@ -73,24 +73,21 @@ const emptyLogger: Logger = {
     result: () => { }
 }
 
-function calcSuccessMessage<T>(part: Part, type: Type, value: T | [T, T], expectedResult: T | [T, T] | [T, T, T, T] | undefined): "OK" | "KO" | "" {
+function calcSuccessMessage<T,U>(part: Part, type: Type, value: T | [T, U], expectedResult: T | [T, T] | [T, T, U, U] | undefined): "OK" | "KO" | "" {
     const isValueArray = Array.isArray(value);
     if ((isValueArray && part !== Part.ALL) || (!isValueArray && part === Part.ALL)) {
-        throw new Error("Iconsistent value result with part type");
+        throw new Error("Inconsistent value result with part type");
     }
     if (expectedResult === undefined) {
         return "";
     }
     if (Array.isArray(expectedResult)) {
         if (part === Part.ALL) {
-            const effectiveValue = (value as [T, T]);
+            const effectiveValue = (value as [T, U]);
             if (expectedResult.length === 2) {
-                if (type !== Type.TEST) {
-                    return "";
-                }
-                return effectiveValue[0] === expectedResult[0] && effectiveValue[1] === expectedResult[1] ? "OK" : "KO";
+                throw new Error("Inconsistent value result with part type");
             } else {
-                const effectiveValue = (value as [T, T, T, T]);
+                const effectiveValue = (value as [T, T, U, U]);
                 const effectiveExpected = type === Type.TEST ? [expectedResult[0], expectedResult[2]] : [expectedResult[1], expectedResult[3]];
                 return effectiveValue[0] === effectiveExpected[0] && effectiveValue[1] === effectiveExpected[1] ? "OK" : "KO";
             }
@@ -259,9 +256,9 @@ function buildLogger(day: number, debugMode: boolean | undefined, part: Part, ty
                 do_log(true, part, type, message)
             }
         },
-        result: <T>(value: T | [T, T], result?: T | [T, T] | [T, T, T, T]) => {
-            const result_value = calcSuccessMessage(part, type, value, result);
-            const finalMessage = `[${name}][${part}] RESULT ${result_value} ====>${Array.isArray(value) ? value.join(", ") : value}<====`;
+        result: <T,U>(result: T | [T, U], expectedResult: T | [T, T] | [T, T, U, U]|undefined) => {
+            const result_value = calcSuccessMessage(part, type, result, expectedResult);
+            const finalMessage = `[${name}][${part}] RESULT ${result_value} ====>${Array.isArray(result) ? result.join(", ") : result}<====`;
             if (result_value === "KO") {
                 const target = type === Type.RUN ? failures.run : failures.test;
                 target.count++;

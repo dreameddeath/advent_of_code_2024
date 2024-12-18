@@ -76,42 +76,36 @@ function puzzle(lines: string[], part: Part, type: Type, logger: Logger): void {
     const isTest = (type === Type.TEST);
     const size = isTest ? 7 : 71;
     const generated = [...generator(size)];
-
-    if (part === Part.PART_1) {
-        const map = generateMap(data.slice(0, isTest ? 12 : 1024), generated);
+    let lastSuccessIndex = isTest ? 12 : 1024;
+    const map = generateMap(data.slice(0, isTest ? 12 : 1024), generated);
+    printMap(map, logger);
+    const resultPart1 = findPath(map, isTest);
+    let lastFailedIndex = data.length;
+    let currIndex = Math.floor((lastFailedIndex - lastSuccessIndex) / 2);
+    let nbLoop = 0;
+    while (lastSuccessIndex !== lastFailedIndex - 1) {
+        nbLoop++;
+        const map = generateMap(data.slice(0, currIndex), generated);
+        const pathSize = findPath(map, isTest);
         printMap(map, logger);
-        const result = findPath(map, isTest);
-        logger.result(result, [22, 296])
-    }
-    else {
-        let lastSuccessIndex = -1;
-        let lastFailedIndex = data.length;
-        let currIndex = Math.floor(data.length / 2);
-        let nbLoop = 0;
-        while (lastSuccessIndex !== lastFailedIndex - 1) {
-            nbLoop++;
-            const map = generateMap(data.slice(0, currIndex), generated);
-            const pathSize = findPath(map, isTest);
-            printMap(map, logger);
 
-            if (pathSize !== undefined) {
-                lastSuccessIndex = currIndex;
-                currIndex += Math.floor((lastFailedIndex - currIndex) / 2);
-            } else {
-                lastFailedIndex = currIndex;
-                currIndex -= Math.floor((currIndex - lastSuccessIndex) / 2);
-            }
-            if (currIndex === lastSuccessIndex) {
-                currIndex++
-            } else if (currIndex === lastFailedIndex) {
-                currIndex--;
-            }
+        if (pathSize !== undefined) {
+            lastSuccessIndex = currIndex;
+            currIndex += Math.floor((lastFailedIndex - currIndex) / 2);
+        } else {
+            lastFailedIndex = currIndex;
+            currIndex -= Math.floor((currIndex - lastSuccessIndex) / 2);
         }
-        logger.log("Nb Loops " + nbLoop);
-        const foundPos = data[lastSuccessIndex]
-        const result = `${foundPos.x},${foundPos.y}`;
-        logger.result(result, ["6,1", "28,44"])
+        if (currIndex === lastSuccessIndex) {
+            currIndex++
+        } else if (currIndex === lastFailedIndex) {
+            currIndex--;
+        }
     }
+    logger.log("Nb Loops " + nbLoop);
+    const foundPos = data[lastSuccessIndex]
+    const resultPart2 = `${foundPos.x},${foundPos.y}`;
+    logger.result([resultPart1, resultPart2], [22, 296, "6,1", "28,44"])
 }
 
 /**
@@ -119,4 +113,4 @@ function puzzle(lines: string[], part: Part, type: Type, logger: Logger): void {
  * Adapt types list to your needs and parts also 
  * @see run javadoc
  */
-run(18, [Type.TEST, Type.RUN], puzzle, [Part.PART_1, Part.PART_2], { debug: false })
+run(18, [Type.TEST, Type.RUN], puzzle, [Part.ALL], { debug: false })
