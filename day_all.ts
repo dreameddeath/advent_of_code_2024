@@ -20,7 +20,7 @@ import "./history/day_15";
 import "./history/day_16";
 import "./history/day_17";
 import "./history/day_18";
-// import "./history/day_19";
+import "./history/day_19";
 // import "./history/day_20";
 // import "./history/day_21";
 // import "./history/day_22";
