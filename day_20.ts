@@ -199,7 +199,7 @@ function puzzle(lines: string[], part: Part, type: Type, logger: Logger): void {
     }
     else {
         const result = solve(data, isTest ? 50 : 100, 20, logger);
-        logger.result(result[1], [285, undefined])
+        logger.result(result[1], [285, 1028136])
     }
 }
 
