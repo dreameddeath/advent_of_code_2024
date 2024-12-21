@@ -2,8 +2,8 @@ import { generator } from "./utils";
 
 
 export namespace World2D {
-    export enum Dir { LEFT = "LEFT", RIGHT = "RIGHT", UP = "UP", DOWN = "DOWN" }
-    //export enum Dir { LEFT = 0, RIGHT = 1, UP = 2, DOWN = 3 }
+    //export enum Dir { LEFT = "LEFT", RIGHT = "RIGHT", UP = "UP", DOWN = "DOWN" }
+    export enum Dir { LEFT = 0, RIGHT = 1, UP = 2, DOWN = 3 }
     export type DirComposite = Dir[];
 
     export type Pos = { x: number, y: number }
