@@ -56,7 +56,7 @@ export interface Logger {
     log(message: LogMessage): void,
     assert<T>(v: T, test: T, message: LogMessage): void
     error(message: LogMessage): void,
-    result<T, U>(value: T | [T, U], testResult: T | [T, T] | [T, T, U, U]|undefined): void,
+    result<T, U>(value: T | [T, U], testResult: T | [T, T] | [T, T, U, U] | undefined): void,
 }
 
 const emptyLogger: Logger = {
@@ -73,7 +73,7 @@ const emptyLogger: Logger = {
     result: () => { }
 }
 
-function calcSuccessMessage<T,U>(part: Part, type: Type, value: T | [T, U], expectedResult: T | [T, T] | [T, T, U, U] | undefined): "OK" | "KO" | "" {
+function calcSuccessMessage<T, U>(part: Part, type: Type, value: T | [T, U], expectedResult: T | [T, T] | [T, T, U, U] | undefined): "OK" | "KO" | "" {
     const isValueArray = Array.isArray(value);
     if ((isValueArray && part !== Part.ALL) || (!isValueArray && part === Part.ALL)) {
         throw new Error("Inconsistent value result with part type");
@@ -244,6 +244,13 @@ function do_log(iserror: boolean, part: Part, type: Type, input: LogMessage) {
     }
 }
 
+function areEquals<T>(v1: any, v2: any): boolean {
+    if (Array.isArray(v1)) {
+        return (v1.length === v2.length) && v1.filter((n, p) => !areEquals(v2[p], n)).length === 0
+    }
+    return v1 === v2;
+}
+
 function buildLogger(day: number, debugMode: boolean | undefined, part: Part, type: Type): Logger {
     const name = Type[type];
     return {
@@ -252,11 +259,11 @@ function buildLogger(day: number, debugMode: boolean | undefined, part: Part, ty
         log: (message: LogMessage) => do_log(false, part, type, message),
         error: (message: LogMessage) => do_log(true, part, type, message),
         assert: <T>(v: T, t: T, message: LogMessage) => {
-            if (v !== t) {
+            if (!areEquals(v, t)) {
                 do_log(true, part, type, message)
             }
         },
-        result: <T,U>(result: T | [T, U], expectedResult: T | [T, T] | [T, T, U, U]|undefined) => {
+        result: <T, U>(result: T | [T, U], expectedResult: T | [T, T] | [T, T, U, U] | undefined) => {
             const result_value = calcSuccessMessage(part, type, result, expectedResult);
             const finalMessage = `[${name}][${part}] RESULT ${result_value} ====>${Array.isArray(result) ? result.join(", ") : result}<====`;
             if (result_value === "KO") {

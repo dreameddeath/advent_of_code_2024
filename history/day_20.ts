@@ -1,7 +1,7 @@
-import { Logger, Part, run, Type } from "./day_utils"
-import { World2D } from "./map2d.utils";
-import { ExtendedMap } from "./mapUtils";
-import { PriorityQueue } from "./priority_queue";
+import { Logger, Part, run, Type } from "../day_utils"
+import { World2D } from "../map2d.utils";
+import { ExtendedMap } from "../mapUtils";
+import { PriorityQueue } from "../priority_queue";
 
 enum Cell {
     WALL = 0,
