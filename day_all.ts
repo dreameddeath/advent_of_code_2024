@@ -24,8 +24,8 @@ import "./history/day_19";
 import "./history/day_20";
 // import "./history/day_21";
 import "./history/day_22";
-// import "./history/day_23";
+import "./history/day_23";
 // import "./history/day_24";
-// import "./history/day_25";
+import "./history/day_25";
 
 endAll();
