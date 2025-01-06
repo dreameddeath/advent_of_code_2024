@@ -55,7 +55,7 @@ function puzzle(lines: string[], part: Part, type: Type, logger: Logger): void {
     const data = parse(lines);
 
     const result = countMatch(data);
-    logger.result(result, [3, undefined])
+    logger.result(result, [3, 2900])
 
 }
 

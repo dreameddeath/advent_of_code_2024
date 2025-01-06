@@ -23,36 +23,41 @@ function next(n: number): number {
 
 interface Caches {
     perSequence: ExtendedMap<string, number>;
-    perSequenceAndRank: Set<string>;
+    currentBuyerCache: Set<string>;
 }
 
 
-function calculate(n: number, max_rank: number, rank: number, cachePriceChanges: Caches): number {
-    const prices: number[] = [n % 10];
-    const deltas: number[] = [];
-    for (let i = 0; i < max_rank; ++i) {
+function calculate(n: number, max_rank: number, buyer: number, cachePriceChanges: Caches): number {
+    const prices: Uint32Array = new Uint32Array(4);//: number[] = [n % 10];
+    const deltas: Uint32Array = new Uint32Array(4);//: number[] = [];
+    cachePriceChanges.currentBuyerCache.clear();
+    [...generator(3)].forEach(i => {
         n = next(n);
         const price = n % 10;
-        prices.unshift(price);
-        if (prices.length >= 2) {
-            deltas.unshift(prices[0] - prices[1]);
+        prices[i + 1] = price;
+        deltas[i] = prices[i + 1] - prices[i];
+    });
+    for (let i = 0; i < 3; ++i) {
+        prices[i] = prices[i + 1];
+    }
+    for (let i = 3; i < max_rank; ++i) {
+        n = next(n);
+        const price = n % 10;
+        prices[3] = price;
+        deltas[3] = prices[3] - prices[2];
+        const key = deltas.join(",");
+        //const keyPerRank = key + "#" + buyer;
+        if (!cachePriceChanges.currentBuyerCache.has(key)) {
+            cachePriceChanges.currentBuyerCache.add(key);
+            cachePriceChanges.perSequence.apply(
+                key,
+                (c) => c + price,
+                () => 0
+            )
         }
-        if (prices.length > 4) {
-            prices.pop();
-        }
-        if (deltas.length > 4) {
-            deltas.pop();
-        }
-        if (deltas.length === 4) {
-            const key = deltas.reverseCopy().join(",");
-            const keyPerRank = key + "#" + rank;
-            if (!cachePriceChanges.perSequenceAndRank.has(keyPerRank)) {
-                cachePriceChanges.perSequenceAndRank.add(keyPerRank);
-                cachePriceChanges.perSequence.apply(key,
-                    (c) => c + price,
-                    () => 0
-                )
-            }
+        for (let i = 0; i < 3; ++i) {
+            prices[i] = prices[i + 1];
+            deltas[i] = deltas[i + 1];
         }
     }
     return n;
@@ -77,16 +82,15 @@ function puzzle(lines: string[], part: Part, type: Type, logger: Logger): void {
     );
     const cachePriceChanges: Caches = {
         perSequence: new ExtendedMap(),
-        perSequenceAndRank: new Set()
+        currentBuyerCache: new Set()
     };
     const data = parse(lines);
-    const result = data.map((n, rank) => calculate(n, 2000, rank, cachePriceChanges)).reduce((a, b) => a + b);
+    const result = data.map((n, buyer) => calculate(n, 2000, buyer, cachePriceChanges)).reduce((a, b) => a + b);
     let resultPart2: number = 0;
     {
         if (type === Type.TEST) {
             cachePriceChanges.perSequence.clear();
-            cachePriceChanges.perSequenceAndRank.clear();
-            [1, 2, 3, 2024].map((n, rank) => calculate(n, 2000, rank, cachePriceChanges)).reduce((a, b) => a + b);
+            [1, 2, 3, 2024].map((n, buyer) => calculate(n, 2000, buyer, cachePriceChanges)).reduce((a, b) => a + b);
         }
         const sorted = [...cachePriceChanges.perSequence.entries()].reverseSortIntuitive(i => i[1]);
         resultPart2 = sorted[0][1];
